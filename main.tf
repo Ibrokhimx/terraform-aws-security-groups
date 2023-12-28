@@ -9,11 +9,12 @@ resource "aws_security_group" "default" {
     for_each = each.value.ingress_rules != null ? each.value.ingress_rules : []
 
     content {
-      description = ingress.value.description
-      from_port   = ingress.value.from_port
-      to_port     = ingress.value.to_port
-      protocol    = ingress.value.protocol
-      cidr_blocks = ingress.value.cidr_blocks
+      description     = ingress.value.description
+      from_port       = ingress.value.from_port
+      to_port         = ingress.value.to_port
+      protocol        = ingress.value.protocol
+      cidr_blocks     = ingress.value.cidr_blocks != null ? ingress.value.cidr_blocks : null
+      security_groups = ingress.value.security_groups != null ? ingress.value.security_groups : null
     }
   }
 
@@ -22,60 +23,16 @@ resource "aws_security_group" "default" {
 
 
     content {
-      description = egress.value.description
-      from_port   = egress.value.from_port
-      to_port     = egress.value.to_port
-      protocol    = egress.value.protocol
-      cidr_blocks = egress.value.cidr_blocks
+      description     = egress.value.description
+      from_port       = egress.value.from_port
+      to_port         = egress.value.to_port
+      protocol        = egress.value.protocol
+      cidr_blocks     = egress.value.cidr_blocks != null ? egress.value.cidr_blocks : null
+      security_groups = egress.value.security_groups != null ? egress.value.security_groups : null
     }
   }
 }
 
 output "security_group_id" {
   value = { for k, v in aws_security_group.default : k => v.id }
-}
-
-variable "dynamic" {
-  type = string
-}
-
-variable "subnets" {
-  type = map(object({
-    cidr_block        = string
-    availability_zone = string
-  }))
-  default = {}
-}
-
-resource "aws_subnet" "main" {
-  for_each          = var.subnets
-  vpc_id            = var.dynamic
-  cidr_block        = each.value.cidr_block #cidrsubnet(data.aws_vpc.main.cidr_block, 4, 1)
-  availability_zone = each.value.availability_zone
-  tags = {
-    Name = join("-", [var.prefix, "subnet"])
-  }
-}
-
-
-variable "prefix" {
-  type = string
-}
-resource "aws_vpc" "bambam" {
-  cidr_block = var.vpc_cidr
-  tags = {
-    Name = join("-", [var.prefix, "vpc"])
-  }
-}
-
-variable "prefix" {
-  type = string
-}
-
-variable "vpc_cidr" {
-  type = string
-}
-
-output "bambams_vpc_id" {
-  value = aws_vpc.bambam.id
 }
